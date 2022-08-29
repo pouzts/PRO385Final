@@ -3,12 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class Player : MonoBehaviour
+[RequireComponent(typeof(CharacterController))]
+public class OWPlayer : MonoBehaviour
 {
-    [SerializeField] float speed = 0f;
+    [Header("Player Settings")]
+    [SerializeField] float speed = 5f;
+    [SerializeField] float turnSmoothTime = 0.1f;
 
     CharacterController controller;
-    Vector3 movement = Vector3.zero;
+    Vector3 direction = Vector3.zero;
+    float turnSmoothVelocity;
 
     void Start()
     {
@@ -17,11 +21,19 @@ public class Player : MonoBehaviour
 
     void Update()
     {
-        controller.Move(movement * speed * Time.deltaTime);
+        if (direction.magnitude >= 0.1f)
+        {
+            float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
+            float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
+            transform.rotation = Quaternion.Euler(0f, angle, 0f);
+
+            Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+            controller.Move(moveDir * speed * Time.deltaTime);
+        }
     }
 
     void OnMove(InputValue inputValue)
     { 
-        movement = inputValue.Get<Vector3>();
+        direction = inputValue.Get<Vector3>();
     }
 }
